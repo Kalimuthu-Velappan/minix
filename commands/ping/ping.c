@@ -50,39 +50,47 @@ char *argv[];
 	ipaddr_t dst_addr;
 	struct hostent *hostent;
 	int length;
+	char *dev_name = "/dev/ip";
+	char *host_name;
 
-	if (argc<2 || argc>3)
+	if (argc<2 || (argc > 3 && strcmp(argv[1], "-I")) || argc>5)
 	{
-		fprintf(stderr, "Usage: %s hostname [length]\n", argv[0]);
+		fprintf(stderr, "Usage: %s [-I /dev/ip<n>]  hostname [length]\n", argv[0]);
 		exit(1);
 	}
-	hostent= gethostbyname(argv[1]);
+	if (argc > 3) {
+		host_name = argv[3];
+		dev_name = argv[2];
+	} else {
+		host_name = argv[1];
+	}
+	hostent= gethostbyname(host_name);
 	if (!hostent)
 	{
-		dst_addr= inet_addr(argv[1]);
+		dst_addr= inet_addr(host_name);
 		if (dst_addr == -1)
 		{
 			fprintf(stderr, "%s: unknown host (%s)\n",
-				argv[0], argv[1]);
+				argv[0], host_name);
 			exit(1);
 		}
 	}
 	else
 		dst_addr= *(ipaddr_t *)(hostent->h_addr);
-	if (argc == 3)
+	if (argc == 3 || argc == 5)
 	{
-		length= strtol (argv[2], (char **)0, 0);
+		length= strtol (argv[argc - 1], (char **)0, 0);
 		if (length< sizeof(icmp_hdr_t) + IP_MIN_HDR_SIZE)
 		{
 			fprintf(stderr, "%s: length too small (%s)\n",
-				argv[0], argv[2]);
+				argv[0], argv[argc - 1]);
 			exit(1);
 		}
 	}
 	else
 		length= WRITE_SIZE;
 
-	fd= open ("/dev/ip", O_RDWR);
+	fd= open (dev_name, O_RDWR);
 	if (fd<0)
 		perror("open"), exit(1);
 
@@ -131,7 +139,7 @@ char *argv[];
 	}
 	if (i >= 20)
 	{
-		printf("no answer from %s\n", argv[1]);
+		printf("no answer from %s\n", host_name);
 		exit(1);
 	}
 	if (result<0)
@@ -139,7 +147,7 @@ char *argv[];
 		perror ("read");
 		exit(1);
 	}
-	printf("%s is alive\n", argv[1]);
+	printf("%s is alive\n", host_name);
 	exit(0);
 }
 
