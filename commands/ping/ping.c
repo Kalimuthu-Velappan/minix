@@ -43,10 +43,9 @@ int argc;
 char *argv[];
 {
 	int fd, i;
-	int result, result1;
+	int result;
 	nwio_ipopt_t ipopt;
 	ip_hdr_t *ip_hdr;
-	int ihl;
 	icmp_hdr_t *icmp_hdr;
 	ipaddr_t dst_addr;
 	struct hostent *hostent;
