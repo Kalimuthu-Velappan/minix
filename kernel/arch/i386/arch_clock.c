@@ -36,9 +36,11 @@
 
 PRIVATE irq_hook_t pic_timer_hook;		/* interrupt handler hook */
 
+#if 0
 PRIVATE unsigned probe_ticks;
 PRIVATE u64_t tsc0, tsc1;
 #define PROBE_TICKS	(system_hz / 10)
+#endif
 
 PRIVATE unsigned tsc_per_ms[CONFIG_MAX_CPUS];
 
@@ -69,6 +71,7 @@ PUBLIC void stop_8253A_timer(void)
 	outb(TIMER0, 0);
 }
 
+#if 0
 PRIVATE int calib_cpu_handler(irq_hook_t * UNUSED(hook))
 {
 	u64_t tsc;
@@ -88,11 +91,15 @@ PRIVATE int calib_cpu_handler(irq_hook_t * UNUSED(hook))
 	BKL_UNLOCK();
 	return 1;
 }
+#endif
 
 PRIVATE void estimate_cpu_freq(void)
 {
+#if 0
 	u64_t tsc_delta;
+#endif
 	u64_t cpu_freq;
+#if 0
 
 	irq_hook_t calib_cpu;
 
@@ -119,6 +126,8 @@ PRIVATE void estimate_cpu_freq(void)
 	tsc_delta = sub64(tsc1, tsc0);
 
 	cpu_freq = mul64(div64u64(tsc_delta, PROBE_TICKS - 1), make64(system_hz, 0));
+#endif
+	cpu_freq = 200000000LL;
 	cpu_set_freq(cpuid, cpu_freq);
 	cpu_info[cpuid].freq = div64u(cpu_freq, 1000000);
 	BOOT_VERBOSE(cpu_print_freq(cpuid));
