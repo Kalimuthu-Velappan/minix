@@ -5,7 +5,7 @@
 
 #include <minix/drivers.h>
 #include <minix/chardriver.h>
-#include <minix/type.h>
+#include <minix/cpufeature.h>
 
 #include "assert.h"
 #include "random.h"
@@ -273,16 +273,21 @@ PRIVATE void r_random(message *UNUSED(m_ptr))
   static struct k_randomness_bin krandom_bin;
   u32_t hi, lo;
   rand_t r;
+  static int cpu_has_tsc = -1;
 
   bin = (bin+1) % RANDOM_SOURCES;
 
   if(sys_getrandom_bin(&krandom_bin, bin) == OK)
 	r_updatebin(bin, &krandom_bin);
 
-  /* Add our own timing source. */
-  read_tsc(&hi, &lo);
-  r = lo;
-  random_update(RND_TIMING, &r, 1);
+  /* Add our own timing source, if available. */
+  if (cpu_has_tsc == -1)
+	cpu_has_tsc = _cpufeature(_CPUF_I386_TSC);
+  if (cpu_has_tsc) {
+	read_tsc(&hi, &lo);
+	r = lo;
+	random_update(RND_TIMING, &r, 1);
+  }
 
   /* Schedule new alarm for next m_random call. */
   if (OK != (s=sys_setalarm(KRANDOM_PERIOD, 0)))

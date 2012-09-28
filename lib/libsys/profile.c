@@ -19,6 +19,7 @@
 #include <minix/sysutil.h>
 #include <minix/u64.h>
 #include <minix/minlib.h>
+#include <minix/cpufeature.h>
 
 PRIVATE char cpath[CPROF_CPATH_MAX_LEN];	/* current call path string */
 PRIVATE int cpath_len;				/* current call path len */
@@ -171,14 +172,12 @@ PUBLIC void procentry (char *name)
 PUBLIC void procexit (char *UNUSED(name))
 {
   u64_t stop, spent;
-  u32_t tsc_lo, tsc_hi;
 
   /* Procexit is not reentrant. */
   if (cprof_locked) return; else cprof_locked = 1;
 
   /* First thing: read CPU cycle count into local variable. */
-  read_tsc(&tsc_hi, &tsc_lo);
-  stop = make64(tsc_lo, tsc_hi);
+  read_tsc_64(&stop);
 
   /* Only continue if sane. */
   if (control.err) return;
@@ -213,8 +212,7 @@ PUBLIC void procexit (char *UNUSED(name))
    */
 
   /* Read CPU cycle count. */
-  read_tsc(&tsc_hi, &tsc_lo);
-  stop = make64(tsc_lo, tsc_hi);
+  read_tsc_64(&stop);
 
   /* Calculate "big" difference. */
   spent = sub64(stop, cprof_stk[cprof_stk_top].start_1);

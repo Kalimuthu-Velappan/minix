@@ -14,6 +14,12 @@ int test(size_t size)
 	u32_t low1, high1;
 	u32_t low2, high2;
 	int r;
+	static int cpu_has_tsc = -1;
+
+	if (cpu_has_tsc == -1)
+		cpu_has_tsc = _cpufeature(_CPUF_I386_TSC);
+	if (!cpu_has_tsc)
+		panic("test: No TSC!");
 
 	/* Timing. */
 	read_tsc(&high1, &low1);

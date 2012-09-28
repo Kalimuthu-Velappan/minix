@@ -16,6 +16,7 @@
 #include <minix/safecopies.h>
 #include <minix/syslib.h>
 #include <minix/sysutil.h>
+#include <minix/cpufeature.h>
 #include <errno.h>
 
 /* TEST_PAGE_SHIFT =

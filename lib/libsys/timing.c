@@ -4,12 +4,15 @@
 #include <minix/config.h>
 #include <minix/const.h>
 #include <minix/minlib.h>
+#include <minix/cpufeature.h>
 
 #define HIGHCOUNT	0
 #define LOWCOUNT	1
 
 #define START		0
 #define END		1
+
+static int cpu_has_tsc = -1;
 
 void util_timer_start(util_timingdata_t *timingdata, char *name)
 {
@@ -26,6 +29,11 @@ void util_timer_start(util_timingdata_t *timingdata, char *name)
 		return;
 	}
 
+	if (cpu_has_tsc == -1)
+		cpu_has_tsc = _cpufeature(_CPUF_I386_TSC);
+	if (!cpu_has_tsc)
+		panic("util_timer_start: No TSC!");
+
 	read_tsc((u32_t *) &timingdata->starttimes[HIGHCOUNT],
 		 (u32_t *) &timingdata->starttimes[LOWCOUNT]);
 }
@@ -34,6 +42,11 @@ void util_timer_end(util_timingdata_t *timingdata)
 {
 	unsigned long h, l, d = 0;
 	int bin;
+
+	if (cpu_has_tsc == -1)
+		cpu_has_tsc = _cpufeature(_CPUF_I386_TSC);
+	if (!cpu_has_tsc)
+		panic("util_timer_start: No TSC!");
 
 	read_tsc((u32_t *) &h, (u32_t *) &l);
 	if (!timingdata->starttimes[HIGHCOUNT]) {

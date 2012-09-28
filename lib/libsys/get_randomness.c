@@ -7,6 +7,7 @@
 #include <minix/type.h>
 #include <minix/minlib.h>
 #include <minix/sysutil.h>
+#include <minix/cpufeature.h>
 
 /*===========================================================================*
  *                              get_randomness                               *
@@ -20,7 +21,13 @@ int source;
  */
   int r_next;
   unsigned long tsc_high, tsc_low;
- 
+  static int cpu_has_tsc = -1;
+
+  if (cpu_has_tsc == -1)
+	cpu_has_tsc = _cpufeature(_CPUF_I386_TSC);
+  if (!cpu_has_tsc)
+	panic("get_randomness: No TSC!");
+
   source %= RANDOM_SOURCES;
   r_next= rand->bin[source].r_next;  
   read_tsc((u32_t *) &tsc_high, (u32_t *) &tsc_low);
