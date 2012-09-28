@@ -52,11 +52,14 @@ PRIVATE int bigpage_ok = 0;
 /* Our process table entry. */
 struct vmproc *vmprocess = &vmproc[VM_PROC_NR];
 
+/* At most 10 * 4K * 1024 = 40M are occupied by boot tasks */
+#define BOOT_PDES 10
+
 /* Spare memory, ready to go after initialization, to avoid a
  * circular dependency on allocating memory and writing it into VM's
  * page table.
  */
-#define SPAREPAGES 25
+#define SPAREPAGES (25 + BOOT_PDES)
 int missing_spares = SPAREPAGES;
 PRIVATE struct {
 	void *page;
@@ -93,7 +96,7 @@ int kernmappings = 0;
 phys_bytes page_directories_phys;
 u32_t *page_directories = NULL;
 
-#define STATIC_SPAREPAGES 10
+#define STATIC_SPAREPAGES (10 + BOOT_PDES)
 
 PRIVATE char static_sparepages[I386_PAGE_SIZE*STATIC_SPAREPAGES + I386_PAGE_SIZE];
 
@@ -1236,6 +1239,8 @@ PUBLIC void pt_free(pt_t *pt)
 PUBLIC int pt_mapkernel(pt_t *pt)
 {
 	int i;
+	static int pdes = 0;
+	static u32_t long_pdes[10];
 
         /* Any i386 page table needs to map in the kernel address space. */
         assert(vmproc[VMP_SYSTEM].vm_flags & VMF_INUSE);
@@ -1250,8 +1255,33 @@ PUBLIC int pt_mapkernel(pt_t *pt)
 				I386_VM_BIGPAGE | I386_VM_USER |
 				I386_VM_WRITE | global_bit;
 		}
+	} else if (pdes == 0) {
+		int pde;
+
+		/* Remember how many page directory entries are occupied by
+		 * mapping the boot tasks. */
+		pdes = id_map_high_pde;
+		/* Boot tasks too big? Increase BOOT_PDES. */
+		assert (pdes < BOOT_PDES);
+
+		/* Create initial mapping for the boot tasks. */
+		i = pt_writemap(NULL, pt,
+			0, 0, pdes * I386_BIG_PAGE_SIZE,
+			I386_VM_PRESENT | I386_VM_USER |
+			I386_VM_WRITE | global_bit, 0);
+		if (i != OK)
+			panic("pt_mapkernel: pt_writemap failed");
+
+		/* Store the pdes, to be shared by following mappings. */
+		for(pde = 0; pde <= pdes; pde++)
+			long_pdes[pde] = pt->pt_dir[pde];
 	} else {
-		panic("VM: pt_mapkernel: no bigpage");
+		/* No bigmem and boot tasks already mapped?
+		 * Reuse the pdes! */
+
+		int pde;
+		for(pde = 0; pde <= pdes; pde++)
+			pt->pt_dir[pde] = long_pdes[pde];
 	}
 
 	if(pagedir_pde >= 0) {
