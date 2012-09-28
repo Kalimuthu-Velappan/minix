@@ -296,7 +296,9 @@ boot2(int biosdev, uint64_t biossector)
 
 	twiddle_toggle = 1;	/* no twiddling until we're ready */
 
+#if 1
 	initio(boot_params.bp_consdev);
+#endif
 
 #ifdef SUPPORT_PS2
 	biosmca();
