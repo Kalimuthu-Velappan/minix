@@ -2,15 +2,20 @@
 .SH NAME
 ping \- send ICMP ECHO_REQUEST packets to network hosts 
 .SH SYNOPSIS
-.B /usr/bin/ping hostname [length]
+.B /usr/bin/ping [-I /dev/ip<n>] hostname [length]
 .de EX
 .TP 20
 \\fB\$1\\fR
 # \\$2
 ..
+.SH OPTIONS
+.TP 5
+.B \-I
+# IP device. Defaults to \fI/dev/ip0\fR.
 .SH EXAMPLES
 .EX "ping 192.168.1.1" "Ping host 192.168.1.1"
 .EX "ping www.minix3.org 500" "Ping www.minix3.org with 500 byte IP packets"
+.EX "ping -I /dev/ip1 www.minix3.org 500" "Ping www.minix3.org with 500 byte IP packets via alternate network device"
 .SH DESCRIPTION
 .PP
 Sends ICMP ECHO_REQUEST packets to the specified host and waits for a ECHO_REPLY.
