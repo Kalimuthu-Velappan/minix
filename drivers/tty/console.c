@@ -32,7 +32,7 @@
 /* Set this to 1 if you want console output duplicated on the first
  * serial line.
   */
-#define DUP_CONS_TO_SER	0
+#define DUP_CONS_TO_SER	1
 
 /* The clock task should provide an interface for this */
 #define TIMER_FREQ  1193182L    /* clock frequency for timer in PC and AT */
