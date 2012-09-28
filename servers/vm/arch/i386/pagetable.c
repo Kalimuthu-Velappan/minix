@@ -928,7 +928,7 @@ PUBLIC void pt_init(phys_bytes usedlimit)
 
 	/* global bit and 4MB pages available? */
 	global_bit_ok = _cpufeature(_CPUF_I386_PGE);
-	bigpage_ok = _cpufeature(_CPUF_I386_PSE);
+	bigpage_ok = 0; //_cpufeature(_CPUF_I386_PSE);
 
 	/* Set bit for PTE's and PDE's if available. */
 	if(global_bit_ok)
