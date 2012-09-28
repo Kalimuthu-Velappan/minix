@@ -671,7 +671,7 @@ PUBLIC int lapic_enable(unsigned cpu)
 	if (!lapic_addr)
 		return 0;
 
-	cpu_has_tsc = _cpufeature(_CPUF_I386_TSC);
+	cpu_has_tsc = 0; // _cpufeature(_CPUF_I386_TSC);
 	if (!cpu_has_tsc) {
 		printf("CPU lacks timestamp counter, "
 			"cannot calibrate LAPIC timer\n");

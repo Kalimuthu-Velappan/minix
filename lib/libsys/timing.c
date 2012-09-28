@@ -30,7 +30,7 @@ void util_timer_start(util_timingdata_t *timingdata, char *name)
 	}
 
 	if (cpu_has_tsc == -1)
-		cpu_has_tsc = _cpufeature(_CPUF_I386_TSC);
+		cpu_has_tsc = 0; // _cpufeature(_CPUF_I386_TSC);
 	if (!cpu_has_tsc)
 		panic("util_timer_start: No TSC!");
 
@@ -44,7 +44,7 @@ void util_timer_end(util_timingdata_t *timingdata)
 	int bin;
 
 	if (cpu_has_tsc == -1)
-		cpu_has_tsc = _cpufeature(_CPUF_I386_TSC);
+		cpu_has_tsc = 0; // _cpufeature(_CPUF_I386_TSC);
 	if (!cpu_has_tsc)
 		panic("util_timer_start: No TSC!");
 

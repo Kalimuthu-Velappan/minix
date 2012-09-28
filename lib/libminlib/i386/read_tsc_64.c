@@ -12,7 +12,7 @@ u64_t* t;
     static int cpu_has_tsc = -1;
 
     if (cpu_has_tsc == -1)
-	cpu_has_tsc = _cpufeature(_CPUF_I386_TSC);
+	cpu_has_tsc = 0; // _cpufeature(_CPUF_I386_TSC);
     if (!cpu_has_tsc)
         panic("No TSC!");
 
