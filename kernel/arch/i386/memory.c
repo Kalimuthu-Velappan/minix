@@ -33,6 +33,8 @@ PRIVATE int psok = 0;
 
 #define MAX_FREEPDES	2
 PRIVATE int nfreepdes = 0, freepdes[MAX_FREEPDES];
+/* If we can't use bigpages, we use one full PT per PDE, mapping whole 4M */
+PRIVATE int freepts[MAX_FREEPDES][1024];
 
 #define HASPT(procptr) ((procptr)->p_seg.p_cr3 != 0)
 
@@ -102,9 +104,24 @@ PRIVATE phys_bytes createpde(
 		pdeval = pr->p_seg.p_cr3_v[I386_VM_PDE(linaddr)];
 	} else {
 		/* Requested address is physical. Make up the PDE entry. */
-		pdeval = (linaddr & I386_VM_ADDR_MASK_4MB) | 
-			I386_VM_BIGPAGE | I386_VM_PRESENT | 
-			I386_VM_WRITE | I386_VM_USER;
+		if (psok) {
+			pdeval = (linaddr & I386_VM_ADDR_MASK_4MB) | 
+				I386_VM_BIGPAGE | I386_VM_PRESENT | 
+				I386_VM_WRITE | I386_VM_USER;
+		} else {
+			int i;
+			int *pt = freepts[free_pde_idx];
+
+			for (i = 0; i < 1024; i++) {
+				pt[i] = ((linaddr + i*I386_PAGE_SIZE) & I386_VM_ADDR_MASK) |
+					I386_VM_PRESENT |
+					I386_VM_WRITE | I386_VM_USER;
+			}
+			pdeval = ((int)pt & I386_VM_ADDR_MASK) |
+				I386_VM_PRESENT |
+				I386_VM_WRITE | I386_VM_USER;
+			*changed = 1;
+		}
 	}
 
 	/* Write the pde value that we need into a pde that the kernel
@@ -276,7 +293,7 @@ PRIVATE void vm_enable_paging(void)
 	u32_t cr0, cr4;
 	int pgeok;
 
-	psok = _cpufeature(_CPUF_I386_PSE);
+	psok = 0;_cpufeature(_CPUF_I386_PSE);
 	pgeok = _cpufeature(_CPUF_I386_PGE);
 
 	cr0= read_cr0();
@@ -428,6 +445,7 @@ PUBLIC int vm_lookup(const struct proc *proc, const vir_bytes virtual,
 
 	/* We don't expect to ever see this. */
 	if(pde_v & I386_VM_BIGPAGE) {
+		assert(psok);
 		*physical = pde_v & I386_VM_ADDR_MASK_4MB;
 		if(ptent) *ptent = pde_v;
 		*physical += virtual & I386_VM_OFFSET_MASK_4MB;
@@ -577,7 +595,7 @@ PRIVATE char *flagstr(u32_t e, const int dir)
 	FLAG(I386_VM_PCD);
 	FLAG(I386_VM_GLOBAL);
 	if(dir)
-		FLAG(I386_VM_BIGPAGE);	/* Page directory entry only */
+		FLAG(I386_VM_IGPAGE);	/* Page directory entry only */
 	else
 		FLAG(I386_VM_DIRTY);	/* Page table entry only */
 	return str;
@@ -622,6 +640,7 @@ PRIVATE void vm_print(u32_t *root)
 		if(!(pde_v & I386_VM_PRESENT))
 			continue;
 		if(pde_v & I386_VM_BIGPAGE) {
+			assert(psok);
 			printf("%4d: 0x%lx, flags %s\n",
 				pde, I386_VM_PFA(pde_v), flagstr(pde_v, 1));
 		} else {
@@ -639,7 +658,7 @@ PRIVATE void vm_print(u32_t *root)
 #endif
 
 /*===========================================================================*
- *				lin_memset				     *
+ *				vm_phys_memset				     *
  *===========================================================================*/
 int vm_phys_memset(phys_bytes ph, const u8_t c, phys_bytes bytes)
 {

@@ -505,12 +505,14 @@ PRIVATE PUBLIC phys_bytes alloc_pages(int pages, int memflags, phys_bytes *len)
 		USE(pr, pr->size -= pages;);
 	}
 
+#if 0
 	if(memflags & PAF_CLEAR) {
 		int s;
 		if ((s= sys_memset(0, CLICK_SIZE*mem,
 			VM_PAGE_SIZE*pages)) != OK) 
 			panic("alloc_mem: sys_memset failed: %d", s);
 	}
+#endif
 
 #if SANITYCHECKS
 	memstats(&finalnodes, &finalpages, &largest);
